@@ -1,0 +1,299 @@
+// Prisma Schema for C2R Store Online (PostgreSQL Production Architecture)
+// Domain: https://c2rstore.online
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+  EDITOR
+}
+
+enum PriceType {
+  FREE
+  FREEMIUM
+  PAID
+  FREE_TRIAL
+}
+
+enum InquiryType {
+  LISTING
+  PARTNERSHIP
+  SUPPORT
+  GENERAL
+}
+
+enum NetworkStatus {
+  ACTIVE
+  PAUSED
+  PENDING
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String
+  name          String?
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  reviews       Review[]
+  savedTools    SavedTool[]
+
+  @@map("users")
+}
+
+model Category {
+  id            String    @id @default(uuid())
+  name          String    @unique
+  slug          String    @unique
+  description   String
+  icon          String
+  subCategories String[]
+  seoTitle      String?
+  seoDescription String?
+  introContent  String?
+  faqs          Json?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  tools         Tool[]
+
+  @@index([slug])
+  @@map("categories")
+}
+
+model Tool {
+  id                String       @id @default(uuid())
+  name              String       @unique
+  slug              String       @unique
+  tagline           String
+  description       String
+  longReview        String       @db.Text
+  logo              String
+  categoryId        String
+  category          Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  subCategory       String
+  rating            Float        @default(4.8)
+  reviewCount       Int          @default(0)
+  priceType         PriceType    @default(FREEMIUM)
+  startingPrice     String       @default("$0/mo")
+  freePlanAvailable Boolean      @default(true)
+  freeTrialDays     Int?
+  pricingTiers      Json
+  officialUrl       String
+  affiliateUrl      String?
+  affiliateNetworkId String?
+  affiliateNetwork  AffiliateNetwork? @relation(fields: [affiliateNetworkId], references: [id])
+  features          String[]
+  pros              String[]
+  cons              String[]
+  bestFor           String[]
+  alternatives      String[]
+  screenshots       String[]
+  faqs              Json?
+  isFeatured        Boolean      @default(false)
+  isTrending        Boolean      @default(false)
+  isVerified        Boolean      @default(true)
+  viewsCount        Int          @default(0)
+  clicksCount       Int          @default(0)
+  metaTitle         String?
+  metaDescription   String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  reviews           Review[]
+  deals             Deal[]
+  clicks            AffiliateClick[]
+  savedBy           SavedTool[]
+
+  @@index([slug])
+  @@index([categoryId])
+  @@index([isFeatured])
+  @@index([isTrending])
+  @@map("tools")
+}
+
+model Comparison {
+  id                  String   @id @default(uuid())
+  slug                String   @unique
+  toolAId             String
+  toolBId             String
+  toolASlug           String
+  toolBSlug           String
+  title               String
+  summary             String   @db.Text
+  verdict             String   @db.Text
+  winnerSlug          String
+  scoreA              Float
+  scoreB              Float
+  categoriesCompared  Json
+  priceComparison     String   @db.Text
+  bestForA            String
+  bestForB            String
+  prosA               String[]
+  prosB               String[]
+  consA               String[]
+  consB               String[]
+  faqs                Json?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([slug])
+  @@map("comparisons")
+}
+
+model Deal {
+  id            String    @id @default(uuid())
+  toolId        String
+  tool          Tool      @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  title         String
+  discount      String
+  couponCode    String?
+  expiresAt     DateTime
+  affiliateUrl  String
+  terms         String
+  isVerified    Boolean   @default(true)
+  isExclusive   Boolean   @default(false)
+  category      String
+  upvotes       Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([toolId])
+  @@index([expiresAt])
+  @@map("deals")
+}
+
+model Guide {
+  id                   String   @id @default(uuid())
+  slug                 String   @unique
+  title                String
+  excerpt              String
+  content              String   @db.Text
+  category             String
+  authorName           String
+  authorRole           String
+  authorAvatar         String
+  featuredImage        String
+  readTimeMinutes      Int      @default(5)
+  recommendedToolSlugs String[]
+  faqs                 Json?
+  tableOfContents      Json?
+  publishedAt          DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([slug])
+  @@index([category])
+  @@map("guides")
+}
+
+model FreeTool {
+  id             String   @id @default(uuid())
+  slug           String   @unique
+  name           String
+  description    String
+  icon           String
+  category       String
+  inputs         Json
+  promptTemplate String   @db.Text
+  systemPrompt   String   @db.Text
+  examples       Json?
+  tips           String[]
+  faqs           Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([slug])
+  @@map("free_tools")
+}
+
+model AffiliateNetwork {
+  id                     String        @id @default(uuid())
+  name                   String        @unique
+  website                String
+  trackingParamTemplate  String
+  defaultUtmSource       String        @default("c2rstore")
+  status                 NetworkStatus @default(ACTIVE)
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+  tools                  Tool[]
+
+  @@map("affiliate_networks")
+}
+
+model AffiliateClick {
+  id          String   @id @default(uuid())
+  toolId      String?
+  tool        Tool?    @relation(fields: [toolId], references: [id], onDelete: SetNull)
+  toolSlug    String
+  toolName    String
+  targetUrl   String
+  referrer    String?
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  ipHash      String
+  timestamp   DateTime @default(now())
+
+  @@index([toolSlug])
+  @@index([timestamp])
+  @@map("affiliate_clicks")
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  toolId    String
+  tool      Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating    Int
+  title     String
+  body      String   @db.Text
+  verified  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([toolId])
+  @@map("reviews")
+}
+
+model SavedTool {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  toolId    String
+  tool      Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, toolId])
+  @@map("saved_tools")
+}
+
+model NewsletterSubscriber {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String?
+  source       String   @default("homepage")
+  subscribedAt DateTime @default(now())
+  status       String   @default("Active")
+
+  @@index([email])
+  @@map("newsletter_subscribers")
+}
+
+model ContactMessage {
+  id          String      @id @default(uuid())
+  name        String
+  email       String
+  inquiryType InquiryType @default(GENERAL)
+  message     String      @db.Text
+  submittedAt DateTime    @default(now())
+
+  @@map("contact_messages")
+}
