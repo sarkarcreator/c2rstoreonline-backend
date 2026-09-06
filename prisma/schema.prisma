@@ -1,4 +1,4 @@
-// Prisma Schema for C2R Store Online (PostgreSQL Production Architecture)
+// Prisma Schema for C2R Store Online (MySQL Production Architecture)
 // Domain: https://c2rstore.online
 
 generator client {
@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -56,7 +56,7 @@ model Category {
   slug          String    @unique
   description   String
   icon          String
-  subCategories String[]
+  subCategories Json
   seoTitle      String?
   seoDescription String?
   introContent  String?
@@ -91,12 +91,12 @@ model Tool {
   affiliateUrl      String?
   affiliateNetworkId String?
   affiliateNetwork  AffiliateNetwork? @relation(fields: [affiliateNetworkId], references: [id])
-  features          String[]
-  pros              String[]
-  cons              String[]
-  bestFor           String[]
-  alternatives      String[]
-  screenshots       String[]
+  features          Json
+  pros              Json
+  cons              Json
+  bestFor           Json
+  alternatives      Json
+  screenshots       Json
   faqs              Json?
   isFeatured        Boolean      @default(false)
   isTrending        Boolean      @default(false)
@@ -137,10 +137,10 @@ model Comparison {
   priceComparison     String   @db.Text
   bestForA            String
   bestForB            String
-  prosA               String[]
-  prosB               String[]
-  consA               String[]
-  consB               String[]
+  prosA               Json
+  prosB               Json
+  consA               Json
+  consB               Json
   faqs                Json?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
@@ -183,7 +183,7 @@ model Guide {
   authorAvatar         String
   featuredImage        String
   readTimeMinutes      Int      @default(5)
-  recommendedToolSlugs String[]
+  recommendedToolSlugs Json
   faqs                 Json?
   tableOfContents      Json?
   publishedAt          DateTime @default(now())
@@ -205,7 +205,7 @@ model FreeTool {
   promptTemplate String   @db.Text
   systemPrompt   String   @db.Text
   examples       Json?
-  tips           String[]
+  tips           Json
   faqs           Json?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
