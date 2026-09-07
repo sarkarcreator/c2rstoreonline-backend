@@ -12,4 +12,5 @@ COPY --from=build /app/package*.json ./
 RUN npm install --omit=dev
 COPY --from=build /app/.next ./.next
 COPY --from=build /app/prisma ./prisma
+RUN npx prisma generate
 CMD ["npm", "start"]
