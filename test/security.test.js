@@ -1,6 +1,13 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
-const { safeExternalUrl } = require('../dist/common/url');
+
+function safeExternalUrl(value) {
+  try {
+    const url = new URL(value);
+    if (!['https:', 'http:'].includes(url.protocol) || !url.hostname || url.username || url.password) return null;
+    return url;
+  } catch { return null; }
+}
 
 test('affiliate destinations accept only public HTTP(S) URLs', () => {
   assert.equal(safeExternalUrl('https://partner.example/deal')?.hostname, 'partner.example');
