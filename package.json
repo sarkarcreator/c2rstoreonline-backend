@@ -12,7 +12,9 @@
     "prisma:validate": "prisma validate",
     "prisma:seed": "tsx prisma/seed.ts"
   },
-  "prisma": { "seed": "tsx prisma/seed.ts" },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "dependencies": {
     "@google/genai": "^2.19.0",
     "@prisma/client": "6.4.1",
